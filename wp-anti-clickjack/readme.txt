@@ -3,8 +3,8 @@ Contributors: someguy9
 Donate link: https://www.buymeacoffee.com/someguy
 Tags: anti click jacking, security, Browser Frame Breaking Script, clickjacking
 Requires at least: 5.0.0
-Tested up to: 6.5
-Stable tag: 1.7.9
+Tested up to: 6.9
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,7 +28,7 @@ For more information about clickjacking defense techniques, refer to the [OWASP 
 
 - Adds the `X-Frame-Options: SAMEORIGIN` HTTP header to prevent clickjacking
 - Includes a modified version of OWASP's legacy browser frame breaking script
-- Compatible with popular page builders and editors like Elementor, Divi, WPBakery, and more
+- Compatible with popular page builders and editors like Elementor, Divi, WPBakery, Bricks, Breakdance, Oxygen, and more
 - Provides filters to disable the anti-clickjacking measures when needed
 - Easy to install and configure
 - Regularly updated and tested with the latest WordPress versions
@@ -64,10 +64,19 @@ Yes, WP Anti-Clickjack is compatible with popular page builders and editors such
 
 Yes, the plugin provides filters that allow you to disable the clickjacking JavaScript and the X-Frame-Options header when needed. You can use these filters in your theme's `functions.php` file to fine-tune the plugin's behavior.
 
-== Frequently Asked Questions ==
-
-
 == Changelog ==
+
+= 1.8.0 =
+* Tested up to WordPress 6.9
+* Added support for Bricks Builder
+* Added support for Breakdance Builder
+* Added support for Oxygen Builder
+* Added support for Spectra / Starter Templates
+* Added support for Gutenberg Full Site Editor (FSE)
+* Fixed bug with referrer host comparison logic
+* Fixed PHP 8+ compatibility issue with parse_url() error handling
+* Fixed JavaScript cross-origin exception when framed by attacker sites
+* Removed deprecated language attribute from script tag
 
 = 1.7.9 =
 * Tested up to WordPress 6.5

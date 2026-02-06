@@ -3,7 +3,7 @@
  * Plugin Name: WP Anti-Clickjack
  * Plugin URI: https://drawne.com/wordpress-anti-clickjack-plugin/
  * Description: Plugin to prevent your site from being clickjacked by adding OWASP's legacy browser frame breaking script & X-Frame-Options.
- * Version: 1.7.9
+ * Version: 1.8.0
  * Text Domain: wp-anti-clickjack
  * Author: Andy Feliciotti
  * Author URI: https://drawne.com
@@ -78,20 +78,58 @@ class wp_anticlickjack {
 			}
 		}
 
+		// Bricks Builder
+		if ( ! empty( $_REQUEST['bricks'] ) ) {
+			if ( sanitize_text_field( $_REQUEST['bricks'] ) === 'run' ) {
+				$displayAntiClickjack = false;
+			}
+		}
+
+		// Breakdance Builder
+		if ( ! empty( $_REQUEST['breakdance'] ) || ! empty( $_REQUEST['breakdance_iframe'] ) ) {
+			$displayAntiClickjack = false;
+		}
+
+		// Oxygen Builder
+		if ( ! empty( $_REQUEST['ct_builder'] ) || ! empty( $_REQUEST['oxygen_iframe'] ) ) {
+			$displayAntiClickjack = false;
+		}
+
+		// Spectra / Starter Templates
+		if ( ! empty( $_REQUEST['spectra'] ) || ! empty( $_REQUEST['starter-templates-iframe'] ) ) {
+			$displayAntiClickjack = false;
+		}
+
+		// Gutenberg Full Site Editor (FSE)
+		if ( ! empty( $_REQUEST['postType'] ) && ! empty( $_REQUEST['canvas'] ) ) {
+			$displayAntiClickjack = false;
+		}
+
+		// Block Editor iframe preview
+		if ( ! empty( $_REQUEST['editor_frame'] ) || ! empty( $_REQUEST['block-editor'] ) ) {
+			$displayAntiClickjack = false;
+		}
+
 		if( ! empty( $_REQUEST['action'] ) ){
 			if ( sanitize_text_field($_REQUEST['action']) === 'do-plugin-upgrade' || sanitize_text_field($_REQUEST['action']) === 'do-theme-upgrade' || sanitize_text_field($_REQUEST['action']) === 'update-selected' || sanitize_text_field($_REQUEST['action']) === 'update-selected-themes' ) {
 				$displayAntiClickjack = false;
 			}
 		}
 
-		if( ! empty( $_SERVER["HTTP_REFERER"] ) && ! empty( parse_url($_SERVER["HTTP_REFERER"])['host'] ) ){
-			if ( sanitize_text_field(parse_url($_SERVER["HTTP_REFERER"])['host'] !== parse_url(get_site_url())['host']) ) {
-				$displayAntiClickjack = true;
+		if ( ! empty( $_SERVER["HTTP_REFERER"] ) ) {
+			$referrer_parts = parse_url( $_SERVER["HTTP_REFERER"] );
+			$site_parts = parse_url( get_site_url() );
+
+			if ( is_array( $referrer_parts ) && is_array( $site_parts ) &&
+			     ! empty( $referrer_parts['host'] ) && ! empty( $site_parts['host'] ) ) {
+				if ( sanitize_text_field( $referrer_parts['host'] ) !== $site_parts['host'] ) {
+					$displayAntiClickjack = true;
+				}
 			}
 		}
 
 		if ( $displayAntiClickjack ) {
-			echo '<script language="javascript" type="text/javascript">
+			echo '<script type="text/javascript">
 			 var style = document.createElement("style");
 			 style.type = "text/css";
 			 style.id = "antiClickjack";
@@ -99,16 +137,20 @@ class wp_anticlickjack {
 			   style.cssText = "body{display:none !important;}";
 			 }else{
 			   style.innerHTML = "body{display:none !important;}";
-			}
-			document.getElementsByTagName("head")[0].appendChild(style);
+			 }
+			 document.getElementsByTagName("head")[0].appendChild(style);
 
-			if (top.document.domain === document.domain) {
-			 var antiClickjack = document.getElementById("antiClickjack");
-			 antiClickjack.parentNode.removeChild(antiClickjack);
-			} else {
-			 top.location = self.location;
-			}
-		  </script>';
+			 try {
+			   if (top.document.domain === document.domain) {
+			     var antiClickjack = document.getElementById("antiClickjack");
+			     antiClickjack.parentNode.removeChild(antiClickjack);
+			   } else {
+			     top.location = self.location;
+			   }
+			 } catch (e) {
+			   top.location = self.location;
+			 }
+			</script>';
 		}
 	}
 }
