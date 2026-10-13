@@ -2,13 +2,14 @@
 Contributors: someguy9
 Donate link: https://www.buymeacoffee.com/someguy
 Tags: anti click jacking, security, Browser Frame Breaking Script, clickjacking
-Requires at least: 5.0.0
-Tested up to: 6.9
-Stable tag: 1.8.0
+Requires at least: 5.0
+Tested up to: 7.1
+Requires PHP: 7.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Protect Your WordPress Site From Clickjacking Attacks by Adding the X-Frame-Options Header and Owasp's Legacy Browser Frame Breaking Script.
+Protect your WordPress site from clickjacking with X-Frame-Options and CSP frame-ancestors headers plus a frame breaking script.
 
 == Description ==
 
@@ -16,7 +17,7 @@ WP Anti-Clickjack is a powerful security plugin that helps prevent your WordPres
 
 This plugin implements two key defense mechanisms:
 
-1. **X-Frame-Options Header**: The plugin adds the `X-Frame-Options: SAMEORIGIN` HTTP header to your site's responses. This header instructs web browsers to prevent other websites from embedding your site within an iframe, effectively blocking clickjacking attempts.
+1. **Frame protection headers**: The plugin adds the `X-Frame-Options: SAMEORIGIN` and `Content-Security-Policy: frame-ancestors 'self'` HTTP headers to your site's pages. They instruct web browsers to prevent other websites from embedding your site within an iframe, effectively blocking clickjacking attempts. A Content-Security-Policy your site already sends is left in place, and WordPress post embeds stay embeddable on other sites.
 
 2. **OWASP's Legacy Browser Frame Breaking Script**: The plugin includes a modified version of OWASP's legacy browser frame breaking script. This script prevents other sites from putting your site in an iframe, even in browsers that don't support the X-Frame-Options header. The script is optimized to work seamlessly in browsers with and without JavaScript enabled.
 
@@ -26,7 +27,12 @@ For more information about clickjacking defense techniques, refer to the [OWASP 
 
 = Features =
 
-- Adds the `X-Frame-Options: SAMEORIGIN` HTTP header to prevent clickjacking
+- Adds the `X-Frame-Options: SAMEORIGIN` and `Content-Security-Policy: frame-ancestors 'self'` HTTP headers to prevent clickjacking
+- Works alongside your existing Content-Security-Policy, including nonce-based policies, and keeps framing headers your server or another plugin already sends
+- Settings > Anti-Clickjack screen to let sites you choose (like your other domains or a partner) frame your site, also available as the `wp_anti_clickjack_allowed_origins` filter
+- Site Health check that loads your homepage like a visitor and warns if a page cache, CDN or server setting drops or duplicates the headers
+- "Check from outside" button that has [ClickJack Test](https://clickjacktest.com) load your homepage from the internet, through your CDN, and shows what it sees
+- "Test your site" link on the Plugins screen
 - Includes a modified version of OWASP's legacy browser frame breaking script
 - Compatible with popular page builders and editors like Elementor, Divi, WPBakery, Bricks, Breakdance, Oxygen, and more
 - Provides filters to disable the anti-clickjacking measures when needed
@@ -35,13 +41,27 @@ For more information about clickjacking defense techniques, refer to the [OWASP 
 
 = Additional Details =
 
-If you need to disable the clickjacking JavaScript on a specific page, you can use the following filter in your theme's `functions.php` file:
+To disable the clickjacking JavaScript, use the following filter in your theme's `functions.php` file. It receives `true` or `false` and runs last, so you can also return `false` only on specific pages:
 
 `add_filter('wp_anti_clickjack', '__return_false');`
 
-To disable the clickjacking X-Frame-Options HTTP header, use this filter in your theme's `functions.php` file:
+To disable the clickjacking HTTP headers (`X-Frame-Options` and `Content-Security-Policy: frame-ancestors`), use this filter in your theme's `functions.php` file:
 
 `add_filter('wp_anti_clickjack_x_frame_options_header', '__return_false');`
+
+To let other sites put your site in a frame, add them under Settings > Anti-Clickjack, one per line. Developers can use this filter instead (it also receives the sites saved in the settings). Wildcards work for subdomains, and the frame breaking script allows the same sites:
+
+`add_filter( 'wp_anti_clickjack_allowed_origins', function ( $origins ) {
+	$origins[] = 'https://partner.example';
+	$origins[] = 'https://*.example.com';
+	return $origins;
+} );`
+
+If your WordPress admin runs on a different domain than your site, that domain is allowed automatically so page builders and previews keep working.
+
+Page builder and editor previews are detected only for logged-in users who can edit posts, so a visitor cannot switch the protection off by adding a page builder parameter to a URL.
+
+If your server, CDN or another plugin already sends an `X-Frame-Options` header or a `frame-ancestors` policy, the plugin leaves them as they are and doesn't add its own.
 
 == Installation ==
 
@@ -60,11 +80,43 @@ No, WP Anti-Clickjack is designed to have minimal impact on your site's performa
 
 Yes, WP Anti-Clickjack is compatible with popular page builders and editors such as Elementor, Divi, WPBakery, Thrive Architect, and more. If you encounter any compatibility issues, please contact me for assistance.
 
+= How do I let another site put my site in a frame? =
+
+Add its address under Settings > Anti-Clickjack, like `https://partner.example` (or `https://*.example.com` for every subdomain). Developers can use the `wp_anti_clickjack_allowed_origins` filter shown under Additional Details. The site is added to the `frame-ancestors` policy and the frame breaking script allows it too.
+
+= How do I know the protection reaches my visitors? =
+
+Go to Tools > Site Health. The plugin's check loads your homepage the way a visitor would and tells you if the headers are missing (often a page cache or CDN serving pages without them) or if more than one framing policy is sent. Click "Check from outside" there or under Settings > Anti-Clickjack to have ClickJack Test load your homepage from the internet, through any CDN or proxy, and show what it sees.
+
 = Can I customize the anti-clickjacking behavior? =
 
 Yes, the plugin provides filters that allow you to disable the clickjacking JavaScript and the X-Frame-Options header when needed. You can use these filters in your theme's `functions.php` file to fine-tune the plugin's behavior.
 
+== External services ==
+
+The "Check from outside" button and the "Test your site" link use [ClickJack Test](https://clickjacktest.com), a free clickjacking tester. Nothing is sent unless an administrator clicks one of them. When they do, your homepage address is sent to clickjacktest.com, which requests that address from the internet and reports the framing headers it receives. No other data about your site or its users is sent. See ClickJack Test's [terms of use](https://clickjacktest.com/terms) and [privacy policy](https://clickjacktest.com/privacy).
+
 == Changelog ==
+
+= 1.9.0 =
+* New: let sites you choose frame your site with the `wp_anti_clickjack_allowed_origins` filter (added to the `frame-ancestors` policy and allowed by the frame breaking script)
+* New: Settings > Anti-Clickjack screen to allow sites to frame yours without code, with a preview of the headers your pages send
+* New: Site Health check that loads your homepage like a visitor and warns when the headers are missing, duplicated or conflicting
+* New: "Check from outside" button (Site Health and settings) that has ClickJack Test load your homepage from the internet and shows what your CDN or proxy serves
+* New: "Settings" and "Test your site" links on the Plugins screen
+* Fixed: no longer replaces a stricter `X-Frame-Options: DENY` (or any framing header) your server or another plugin already sends
+* Fixed: page builders and previews work when the WordPress admin runs on a different domain than the site
+* Fixed: framing headers that other plugins send later in the same request are now seen and kept
+* Fixed: the frame breaking script is skipped on AMP pages, where custom scripts aren't allowed
+* Tested up to WordPress 7.1
+* Fixed: no longer replaces a Content-Security-Policy that your site or another plugin already sends
+* Fixed: WordPress post embeds can be shown on other sites again
+* Fixed: the `wp_anti_clickjack_x_frame_options_header` filter now works from your theme's `functions.php`
+* Fixed: returning `false` from the `wp_anti_clickjack` filter now turns the script off for every visitor, including visitors arriving from other sites
+* Security: page builder preview parameters now skip the script only for logged-in users who can edit posts
+* Sends `Content-Security-Policy: frame-ancestors 'self'` alongside `X-Frame-Options` on every supported WordPress version
+* The script now prints through the WordPress inline script API, so Content-Security-Policy plugins can add a nonce to it
+* Code cleanup for WordPress coding standards
 
 = 1.8.0 =
 * Tested up to WordPress 6.9
